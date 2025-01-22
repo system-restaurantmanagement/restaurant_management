@@ -5,6 +5,7 @@ import { formatCurrency } from '../utils/formatCurrency';
 import { getItemOfTheDay } from '../utils/itemOfTheDay';
 import PaymentForm from '../components/PaymentForm';
 import { Star } from 'lucide-react';
+import RecentOrders from '../pages/RecentOrders';
 
 function CustomerOrder() {
   const [menuItems, setMenuItems] = useState([]);
@@ -12,8 +13,8 @@ function CustomerOrder() {
   const [showPayment, setShowPayment] = useState(false);
   const [loading, setLoading] = useState(true);
   const [itemOfTheDay, setItemOfTheDay] = useState(null);
-  const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [categories, setCategories] = useState(['all']);
 
   useEffect(() => {
     fetchMenuItems();
@@ -38,9 +39,8 @@ function CustomerOrder() {
       if (error) throw error;
       
       // Extract unique categories
-      const uniqueCategories = [...new Set(data.map(item => item.category))];
-      setCategories(['all', ...uniqueCategories]);
-      
+      const uniqueCategories = ['all', ...new Set(data.map(item => item.category))];
+      setCategories(uniqueCategories);
       setMenuItems(data);
     } catch (error) {
       toast.error('Error loading menu items');
@@ -83,11 +83,11 @@ function CustomerOrder() {
   };
 
   // Filter menu items based on selected category
-  const filteredMenuItems = selectedCategory === 'all' 
+  const filteredItems = selectedCategory === 'all' 
     ? menuItems 
     : menuItems.filter(item => item.category === selectedCategory);
 
-  const groupedMenuItems = filteredMenuItems.reduce((acc, item) => {
+  const groupedMenuItems = filteredItems.reduce((acc, item) => {
     if (!acc[item.category]) {
       acc[item.category] = [];
     }
@@ -143,17 +143,14 @@ function CustomerOrder() {
           <div className="flex justify-between items-center mb-8">
             <h1 className="text-3xl font-bold">Our Menu</h1>
             <div className="flex items-center space-x-4">
-              <label className="text-sm font-medium text-gray-700">
-                Filter by Category:
-              </label>
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="border border-gray-300 rounded-md px-3 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
                 {categories.map((category) => (
                   <option key={category} value={category}>
-                    {category.charAt(0).toUpperCase() + category.slice(1)}
+                    {category === 'all' ? 'All Categories' : category.charAt(0).toUpperCase() + category.slice(1)}
                   </option>
                 ))}
               </select>
@@ -269,6 +266,7 @@ function CustomerOrder() {
           onClose={() => setShowPayment(false)}
         />
       )}
+      <RecentOrders />
     </div>
   );
 }
