@@ -45,7 +45,10 @@ function AdminDashboard() {
         .order('category');
 
       if (error) throw error;
-      setMenuItems(data);
+      setMenuItems(data.map(item => ({
+        ...item,
+        category: normalizeCategory(item.category)
+      })));
     } catch (error) {
       toast.error('Error loading menu items');
       console.error('Error:', error);
@@ -98,6 +101,13 @@ function AdminDashboard() {
     }
   };
 
+  const normalizeCategory = (category) => {
+    return category
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
   const handleAddItem = async (e) => {
     e.preventDefault();
     
@@ -107,10 +117,13 @@ function AdminDashboard() {
     }
 
     try {
+      const normalizedCategory = normalizeCategory(newItem.category);
+
       const { error } = await supabase
         .from('menu_items')
         .insert([{
           ...newItem,
+          category: normalizedCategory,
           price: parseFloat(newItem.price)
         }]);
 
@@ -151,6 +164,19 @@ function AdminDashboard() {
       }
     }
   };
+
+  // Group and sort menu items by normalized category
+  const groupedMenuItems = menuItems.reduce((acc, item) => {
+    if (!acc[item.category]) {
+      acc[item.category] = [];
+    }
+    acc[item.category].push(item);
+    return acc;
+  }, {});
+
+  const sortedMenuItems = Object.entries(groupedMenuItems)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .flatMap(([_, items]) => items);
 
   if (loading) {
     return (
@@ -239,7 +265,7 @@ function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {menuItems.map((item) => (
+                  {sortedMenuItems.map((item) => (
                     <tr key={item.id}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {item.image_url ? (
@@ -265,7 +291,7 @@ function AdminDashboard() {
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500 capitalize">
+                        <div className="text-sm text-gray-500">
                           {item.category}
                         </div>
                       </td>
